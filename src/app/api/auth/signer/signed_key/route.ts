@@ -5,6 +5,7 @@ import {
   SIGNED_KEY_REQUEST_TYPE,
   SIGNED_KEY_REQUEST_VALIDATOR_EIP_712_DOMAIN,
 } from '~/lib/constants';
+import { env } from '~/lib/env.server';
 
 const postRequiredFields = ['signerUuid', 'publicKey'];
 
@@ -32,8 +33,8 @@ export async function POST(request: Request) {
 
   try {
     // Get the app's account from seed phrase
-    const seedPhrase = process.env.SEED_PHRASE;
-    const shouldSponsor = process.env.SPONSOR_SIGNER === 'true';
+    const seedPhrase = env.SEED_PHRASE;
+    const shouldSponsor = env.SPONSOR_SIGNER === 'true';
 
     if (!seedPhrase) {
       return NextResponse.json(

@@ -1,4 +1,5 @@
 import { type AccountAssociation } from '@farcaster/miniapp-core/src/manifest';
+import { publicEnv } from '~/lib/env.public';
 
 /**
  * Application constants and configuration values.
@@ -16,7 +17,7 @@ import { type AccountAssociation } from '@farcaster/miniapp-core/src/manifest';
  * The base URL of the application.
  * Used for generating absolute URLs for assets and API endpoints.
  */
-export const APP_URL: string = process.env.NEXT_PUBLIC_URL!;
+export const APP_URL: string = publicEnv.NEXT_PUBLIC_URL;
 
 /**
  * The name of the mini app as displayed to users.
@@ -91,7 +92,7 @@ export const APP_BUTTON_TEXT: string = 'Schedule Casts';
  * endpoint for development and testing.
  */
 export const APP_WEBHOOK_URL: string =
-  process.env.NEYNAR_API_KEY && process.env.NEYNAR_CLIENT_ID
+  process.env.NEYNAR_CLIENT_ID
     ? `https://api.neynar.com/f/app/${process.env.NEYNAR_CLIENT_ID}/event`
     : `${APP_URL}/api/webhook`;
 
@@ -142,7 +143,7 @@ export const RETURN_URL: string | undefined = undefined;
  */
 export const PAYMENT_CONFIG = {
   USDC_BASE: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
-  RECEIVER: process.env.PAYMENT_RECEIVER_ADDRESS!,
+  RECEIVER: publicEnv.PAYMENT_RECEIVER_ADDRESS,
   PRICE: '10',
   DECIMALS: 6,
 } as const;

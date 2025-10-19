@@ -4,6 +4,7 @@ import { z } from "zod";
 import { setUserNotificationDetails } from "~/lib/kv";
 import { sendMiniAppNotification } from "~/lib/notifs";
 import { sendNeynarMiniAppNotification } from "~/lib/neynar";
+import { env } from '~/lib/env.server';
 
 const requestSchema = z.object({
   fid: z.number(),
@@ -13,7 +14,7 @@ const requestSchema = z.object({
 export async function POST(request: NextRequest) {
   // If Neynar is enabled, we don't need to store notification details
   // as they will be managed by Neynar's system
-  const neynarEnabled = process.env.NEYNAR_API_KEY && process.env.NEYNAR_CLIENT_ID;
+  const neynarEnabled = Boolean(env.NEYNAR_API_KEY && env.NEYNAR_CLIENT_ID);
 
   const requestJson = await request.json();
   const requestBody = requestSchema.safeParse(requestJson);

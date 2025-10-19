@@ -27,6 +27,7 @@ CREATE TABLE scheduled_casts (
   error_message TEXT,
   cast_hash TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   sent_at TIMESTAMP WITH TIME ZONE
 );
 
@@ -63,6 +64,11 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER update_users_updated_at
   BEFORE UPDATE ON users
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_scheduled_casts_updated_at
+  BEFORE UPDATE ON scheduled_casts
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 

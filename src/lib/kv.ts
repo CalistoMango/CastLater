@@ -1,16 +1,17 @@
 import { MiniAppNotificationDetails } from '@farcaster/miniapp-sdk';
 import { Redis } from '@upstash/redis';
 import { APP_NAME } from './constants';
+import { env } from '~/lib/env.server';
 
 // In-memory fallback storage
 const localStore = new Map<string, MiniAppNotificationDetails>();
 
 // Use Redis if KV env vars are present, otherwise use in-memory
-const useRedis = process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN;
+const useRedis = Boolean(env.KV_REST_API_URL && env.KV_REST_API_TOKEN);
 const redis = useRedis
   ? new Redis({
-      url: process.env.KV_REST_API_URL!,
-      token: process.env.KV_REST_API_TOKEN!,
+      url: env.KV_REST_API_URL!,
+      token: env.KV_REST_API_TOKEN!,
     })
   : null;
 

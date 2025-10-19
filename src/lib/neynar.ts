@@ -1,5 +1,6 @@
 import { NeynarAPIClient, Configuration, WebhookUserCreated } from '@neynar/nodejs-sdk';
 import { APP_URL } from './constants';
+import { env } from '~/lib/env.server';
 
 let neynarClientRef: NeynarAPIClient | null = null;
 
@@ -8,11 +9,7 @@ let neynarClientRef: NeynarAPIClient | null = null;
 // const user = await client.lookupUserByFid(fid); 
 export function getNeynarClient() {
   if (!neynarClientRef) {
-    const apiKey = process.env.NEYNAR_API_KEY;
-    if (!apiKey) {
-      throw new Error('NEYNAR_API_KEY not configured');
-    }
-    const config = new Configuration({ apiKey });
+    const config = new Configuration({ apiKey: env.NEYNAR_API_KEY });
     neynarClientRef = new NeynarAPIClient(config);
   }
   return neynarClientRef;

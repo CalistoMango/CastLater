@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient, Errors } from '@farcaster/quick-auth';
+import { env } from '~/lib/env.server';
 
 const client = createClient();
 
@@ -12,8 +13,8 @@ export async function POST(request: Request) {
     }
 
     // Get domain from environment or request
-    const domain = process.env.NEXT_PUBLIC_URL
-      ? new URL(process.env.NEXT_PUBLIC_URL).hostname
+    const domain = env.NEXT_PUBLIC_URL
+      ? new URL(env.NEXT_PUBLIC_URL).hostname
       : request.headers.get('host') || 'localhost';
 
     try {

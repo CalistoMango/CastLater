@@ -1,6 +1,7 @@
 import { AuthOptions, getServerSession } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { createAppClient, viemConnector } from '@farcaster/auth-client';
+import { env } from '~/lib/env.server';
 
 declare module 'next-auth' {
   interface Session {
@@ -270,11 +271,11 @@ export const authOptions: AuthOptions = {
           });
 
           const baseUrl =
-            process.env.VERCEL_ENV === 'production'
-              ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-              : process.env.VERCEL_URL
-                ? `https://${process.env.VERCEL_URL}`
-                : process.env.NEXTAUTH_URL || `http://localhost:${process.env.PORT ?? 3000}`;
+            env.VERCEL_ENV === 'production' && env.VERCEL_PROJECT_PRODUCTION_URL
+              ? `https://${env.VERCEL_PROJECT_PRODUCTION_URL}`
+              : env.VERCEL_URL
+                ? `https://${env.VERCEL_URL}`
+                : env.NEXTAUTH_URL ?? `http://localhost:${env.PORT ?? 3000}`;
 
           const domain = getDomainFromUrl(baseUrl);
 
@@ -339,26 +340,26 @@ export const authOptions: AuthOptions = {
       name: `next-auth.session-token`,
       options: {
         httpOnly: true,
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
+        secure: env.NODE_ENV === 'production',
       },
     },
     callbackUrl: {
       name: `next-auth.callback-url`,
       options: {
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
+        secure: env.NODE_ENV === 'production',
       },
     },
     csrfToken: {
       name: `next-auth.csrf-token`,
       options: {
         httpOnly: true,
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
+        secure: env.NODE_ENV === 'production',
       },
     },
   },
