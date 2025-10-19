@@ -9,9 +9,6 @@ const envSchema = z
     NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, 'NEXT_PUBLIC_SUPABASE_ANON_KEY is required'),
     SUPABASE_SERVICE_KEY: z.string().min(1, 'SUPABASE_SERVICE_KEY is required'),
-    PAYMENT_RECEIVER_ADDRESS: z
-      .string()
-      .regex(/^0x[a-fA-F0-9]{40}$/, 'PAYMENT_RECEIVER_ADDRESS must be a valid EVM address'),
     KV_REST_API_URL: z.string().url().optional(),
     KV_REST_API_TOKEN: z.string().min(1).optional(),
     NEYNAR_API_KEY: z.string().min(1, 'NEYNAR_API_KEY is required'),
@@ -73,7 +70,6 @@ const rawEnv = {
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY,
-  PAYMENT_RECEIVER_ADDRESS: process.env.PAYMENT_RECEIVER_ADDRESS,
   KV_REST_API_URL: process.env.KV_REST_API_URL,
   KV_REST_API_TOKEN: process.env.KV_REST_API_TOKEN,
   NEYNAR_API_KEY: process.env.NEYNAR_API_KEY,

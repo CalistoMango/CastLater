@@ -143,7 +143,7 @@ export const RETURN_URL: string | undefined = undefined;
  */
 export const PAYMENT_CONFIG = {
   USDC_BASE: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
-  RECEIVER: publicEnv.PAYMENT_RECEIVER_ADDRESS,
+  RECEIVER: publicEnv.NEXT_PUBLIC_PAYMENT_RECEIVER_ADDRESS,
   PRICE: '10',
   DECIMALS: 6,
 } as const;
