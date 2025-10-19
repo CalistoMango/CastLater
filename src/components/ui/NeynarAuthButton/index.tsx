@@ -466,84 +466,90 @@ export function NeynarAuthButton() {
 
   // Handle fetching signers after successful authentication
   useEffect(() => {
-    if (
-      message &&
-      signature &&
-      !isSignerFlowRunning &&
-      !signerFlowStartedRef.current
-    ) {
-      signerFlowStartedRef.current = true;
+    if (!message || !signature) {
+      signerFlowStartedRef.current = false;
+      return;
+    }
 
-      const handleSignerFlow = async () => {
-        setIsSignerFlowRunning(true);
-        try {
-          const clientContext = context?.client as Record<string, unknown>;
-          const isMobileContext =
-            clientContext?.platformType === 'mobile' &&
-            clientContext?.clientFid === FARCASTER_FID;
+    if (isSignerFlowRunning || signerFlowStartedRef.current) {
+      return;
+    }
 
-          // Step 1: Change to loading state
-          setDialogStep('loading');
+    signerFlowStartedRef.current = true;
 
-          // Show dialog if not using miniapp flow or in browser farcaster
-          if ((useMiniappFlow && !isMobileContext) || !useMiniappFlow)
-            setShowDialog(true);
+    const handleSignerFlow = async () => {
+      setIsSignerFlowRunning(true);
+      try {
+        const clientContext = context?.client as
+          | { platformType?: string; clientFid?: number }
+          | undefined;
+        const isMobileContext =
+          clientContext?.platformType === 'mobile' &&
+          clientContext?.clientFid === FARCASTER_FID;
 
-          // First, fetch existing signers
-          const signers = await fetchAllSigners(message, signature);
+        setDialogStep('loading');
 
-          if (useMiniappFlow && isMobileContext) setSignersLoading(true);
+        if ((useMiniappFlow && !isMobileContext) || !useMiniappFlow) {
+          setShowDialog(true);
+        }
 
-          // Check if no signers exist or if we have empty signers
-          if (!signers || signers.length === 0) {
-            // Step 1: Create a signer
-            const newSigner = await createSigner();
+        const signers = await fetchAllSigners(message, signature);
 
-            // Step 2: Generate signed key request
-            const signedKeyData = await generateSignedKeyRequest(
-              newSigner.signer_uuid,
-              newSigner.public_key
-            );
+        if (useMiniappFlow && isMobileContext) {
+          setSignersLoading(true);
+        }
 
-            // Step 3: Show QR code in access dialog for signer approval
-            setSignerApprovalUrl(signedKeyData.signer_approval_url);
+        if (!signers || signers.length === 0) {
+          const newSigner = await createSigner();
+          const signedKeyData = await generateSignedKeyRequest(
+            newSigner.signer_uuid,
+            newSigner.public_key
+          );
 
-            if (isMobileContext) {
-              setShowDialog(false);
-              await sdk.actions.openUrl(
-                signedKeyData.signer_approval_url.replace(
-                  'https://client.farcaster.xyz/deeplinks/signed-key-request',
-                  'https://farcaster.xyz/~/connect'
-                )
-              );
-            } else {
-              setShowDialog(true); // Ensure dialog is shown during loading
-              setDialogStep('access');
-            }
+          setSignerApprovalUrl(signedKeyData.signer_approval_url);
 
-            // Step 4: Start polling for signer approval
-            startPolling(newSigner.signer_uuid, message, signature);
-          } else {
-            // If signers exist, close the dialog
-            setSignersLoading(false);
+          if (isMobileContext) {
             setShowDialog(false);
-            setDialogStep('signin');
+            await sdk.actions.openUrl(
+              signedKeyData.signer_approval_url.replace(
+                'https://client.farcaster.xyz/deeplinks/signed-key-request',
+                'https://farcaster.xyz/~/connect'
+              )
+            );
+          } else {
+            setShowDialog(true);
+            setDialogStep('access');
           }
-        } catch (error) {
-          console.error('❌ Error in signer flow:', error);
-          // On error, reset to signin step and hide dialog
-          setDialogStep('signin');
+
+          startPolling(newSigner.signer_uuid, message, signature);
+        } else {
           setSignersLoading(false);
           setShowDialog(false);
-          setSignerApprovalUrl(null);
-        } finally {
-          setIsSignerFlowRunning(false);
+          setDialogStep('signin');
         }
-      };
+      } catch (error) {
+        console.error('❌ Error in signer flow:', error);
+        setDialogStep('signin');
+        setSignersLoading(false);
+        setShowDialog(false);
+        setSignerApprovalUrl(null);
+      } finally {
+        setIsSignerFlowRunning(false);
+      }
+    };
 
-      handleSignerFlow();
-    }
-  }, [message, signature]); // Simplified dependencies
+    handleSignerFlow();
+  }, [
+    message,
+    signature,
+    isSignerFlowRunning,
+    useMiniappFlow,
+    context,
+    fetchAllSigners,
+    createSigner,
+    generateSignedKeyRequest,
+    startPolling,
+  ]);
 
   // Miniapp flow using NextAuth
   const handleMiniappSignIn = useCallback(async () => {

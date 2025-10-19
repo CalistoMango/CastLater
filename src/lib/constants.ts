@@ -28,7 +28,7 @@ export const APP_NAME: string = 'CastLater';
  * A brief description of the mini app's functionality.
  * Used in app store listings and metadata.
  */
-export const APP_DESCRIPTION: string = 'Schedule your Farcaster casts in advance';
+export const APP_DESCRIPTION: string = 'Schedule casts in advance from multiple accounts. Perfect for content creators and power users.';
 
 /**
  * The primary category for the mini app.
@@ -40,7 +40,7 @@ export const APP_PRIMARY_CATEGORY: string = 'productivity';
  * Tags associated with the mini app.
  * Used for search and discovery in app stores.
  */
-export const APP_TAGS: string[] = ['scheduling', 'automation', 'productivity'];
+export const APP_TAGS: string[] = ['scheduling', 'automation', 'productivity', 'cast', 'multi-account'];
 
 // --- Asset URLs ---
 /**
@@ -132,6 +132,36 @@ export const APP_REQUIRED_CHAINS: string[] = [];
  * back button is pressed from the home page.
  */
 export const RETURN_URL: string | undefined = undefined;
+
+// --- Payments Configuration ---
+/**
+ * Configuration for wallet-based payments.
+ *
+ * These values define the USDC contract on Base, the receiving address, price,
+ * and decimal precision used when constructing payment transactions.
+ */
+export const PAYMENT_CONFIG = {
+  USDC_BASE: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+  RECEIVER: process.env.PAYMENT_RECEIVER_ADDRESS!,
+  PRICE: '10',
+  DECIMALS: 6,
+} as const;
+
+/**
+ * Minimal ERC-20 ABI for transfer interactions.
+ */
+export const ERC20_ABI = [
+  {
+    name: 'transfer',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'to', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'bool' }],
+  },
+] as const;
 
 // PLEASE DO NOT UPDATE THIS
 export const SIGNED_KEY_REQUEST_VALIDATOR_EIP_712_DOMAIN = {

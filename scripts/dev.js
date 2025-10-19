@@ -78,7 +78,7 @@ async function killProcessOnPort(port) {
       });
       await new Promise((resolve) => lsof.on('close', resolve));
     }
-  } catch (e) {
+  } catch (_) {
     // Ignore errors if no process found
   }
 }
@@ -176,7 +176,7 @@ async function startDev() {
             }
           }
           console.log('🛑 Next.js dev server stopped');
-        } catch (e) {
+        } catch (_) {
           // Ignore errors when killing nextDev
           console.log('Note: Next.js process already terminated');
         }
@@ -186,7 +186,7 @@ async function startDev() {
         try {
           await tunnel.close();
           console.log('🌐 Tunnel closed');
-        } catch (e) {
+        } catch (_) {
           console.log('Note: Tunnel already closed');
         }
       }

@@ -1,22 +1,32 @@
 import { NeynarAPIClient, Configuration, WebhookUserCreated } from '@neynar/nodejs-sdk';
 import { APP_URL } from './constants';
 
-let neynarClient: NeynarAPIClient | null = null;
+let neynarClientRef: NeynarAPIClient | null = null;
 
 // Example usage:
 // const client = getNeynarClient();
 // const user = await client.lookupUserByFid(fid); 
 export function getNeynarClient() {
-  if (!neynarClient) {
+  if (!neynarClientRef) {
     const apiKey = process.env.NEYNAR_API_KEY;
     if (!apiKey) {
       throw new Error('NEYNAR_API_KEY not configured');
     }
     const config = new Configuration({ apiKey });
-    neynarClient = new NeynarAPIClient(config);
+    neynarClientRef = new NeynarAPIClient(config);
   }
-  return neynarClient;
+  return neynarClientRef;
 }
+
+/**
+ * Shared Neynar client instance.
+ *
+ * Some call sites (e.g. generated integration snippets) expect a named export
+ * called `neynarClient`. We expose a lazily-created singleton here so that both
+ * the helper function and the constant can be used interchangeably.
+ */
+export const neynarClientSingleton = () => getNeynarClient();
+export const neynarClient = getNeynarClient();
 
 type User = WebhookUserCreated['data'];
 

@@ -79,3 +79,26 @@ However, this does not fully replicate the npx install flow and may not catch al
 
 If you update environment variable handling, remember to replicate any changes in the `dev`, `build`, and `deploy` scripts as needed. The `build` and `deploy` scripts may need further updates and are less critical for most development workflows.
 
+CastLater 📅
+A Farcaster Mini App that lets users schedule their casts in advance. Built with Next.js, Neynar, and Supabase.
+
+### Database Schema
+
+Run `db/schema.sql` against your Supabase/PostgreSQL instance to create required tables, indexes, triggers, and RLS policies.
+Show Image
+🎯 Features
+
+Schedule Casts: Set your casts to post at specific times
+Freemium Model: 1 free scheduled cast, then upgrade to unlimited
+Easy Authentication: Sign in with your Farcaster account (SIWN)
+Crypto Payments: Pay 10 USDC on Base for unlimited access
+Automatic Posting: Cron job sends your scheduled casts on time
+Beautiful UI: Modern, gradient-based design with Tailwind CSS
+
+🏗️ Tech Stack
+
+Frontend: Next.js 14, React, TypeScript, Tailwind CSS
+Backend: Next.js API Routes, Vercel Cron Jobs
+Database: Supabase (PostgreSQL)
+Farcaster: Neynar SDK for authentication and posting
+Payments: Wagmi + Viem for Base USDC transactions
