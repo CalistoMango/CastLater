@@ -1,19 +1,42 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, useConnect } from 'wagmi';
+import { useMiniApp } from '@neynar/react';
 import AuthFlow from '~/components/AuthFlow';
 import Dashboard, { type UserRecord } from '~/components/Dashboard';
 import ConnectButton from '~/components/ConnectButton';
 import { APP_NAME } from '~/lib/constants';
 
 export default function HomePage() {
-  const { address, isConnected } = useAccount();
+  const { isConnected } = useAccount();
+  const { connect, connectors } = useConnect();
+  const { context } = useMiniApp();
 
   const [user, setUser] = useState<UserRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fid, setFid] = useState<number | null>(null);
+
+  // Check if we're running in Farcaster client
+  const isInFarcasterClient = typeof window !== 'undefined' &&
+    (window as unknown as { farcaster?: unknown }).farcaster !== undefined;
+
+  // Auto-connect Farcaster Frame wallet when context is available
+  useEffect(() => {
+    if (context?.user?.fid && !isConnected && connectors.length > 0 && isInFarcasterClient) {
+      console.log('Auto-connecting Farcaster Frame wallet...');
+      console.log('- User FID:', context.user.fid);
+      console.log('- Available connectors:', connectors.map((c, i) => `${i}: ${c.name}`));
+
+      // Use the first connector (farcasterFrame) for auto-connection
+      try {
+        connect({ connector: connectors[0] });
+      } catch (error) {
+        console.error('Auto-connection failed:', error);
+      }
+    }
+  }, [context?.user?.fid, isConnected, connectors, connect, isInFarcasterClient]);
 
   const fetchUserByFid = useCallback(
     async (targetFid: number) => {
@@ -33,7 +56,10 @@ export default function HomePage() {
   );
 
   const checkUserAuth = useCallback(async () => {
-    if (!isConnected || !address) {
+    // Get FID from Farcaster miniapp context if available
+    const contextFid = context?.user?.fid;
+
+    if (!contextFid) {
       setUser(null);
       setFid(null);
       setLoading(false);
@@ -44,33 +70,15 @@ export default function HomePage() {
     setError(null);
 
     try {
-      const fidRes = await fetch('/api/auth/get-fid', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address }),
-      });
-
-      if (!fidRes.ok) {
-        const data = await fidRes.json().catch(() => ({}));
-        setError(
-          data.error ??
-            'No Farcaster account found for the connected wallet address.',
-        );
-        setUser(null);
-        setFid(null);
-        return;
-      }
-
-      const fidPayload = await fidRes.json();
-      setFid(fidPayload.fid);
-      await fetchUserByFid(fidPayload.fid);
+      setFid(contextFid);
+      await fetchUserByFid(contextFid);
     } catch (err) {
       console.error('Auth check error:', err);
-      setError('Failed to verify Farcaster account. Please try again.');
+      setError('Failed to load user data. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [address, fetchUserByFid, isConnected]);
+  }, [context?.user?.fid, fetchUserByFid]);
 
   useEffect(() => {
     checkUserAuth();
@@ -89,7 +97,8 @@ export default function HomePage() {
     return renderLoading();
   }
 
-  if (!isConnected || !address) {
+  // No Farcaster context available - show connect prompt
+  if (!context?.user?.fid) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
         <div className="text-center">
@@ -97,14 +106,20 @@ export default function HomePage() {
             {APP_NAME}
           </h1>
           <p className="mb-8 text-gray-600">
-            Connect your wallet to get started.
+            Open this app in Warpcast to get started.
           </p>
-          <ConnectButton />
+          {!isInFarcasterClient && (
+            <div className="mt-4 text-sm text-gray-500">
+              <p>This is a Farcaster mini app.</p>
+              <p>It needs to be opened from within the Warpcast app.</p>
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
+  // Have FID but no user record or signer - show auth flow
   if (!user || !fid) {
     return (
       <div className="relative">
@@ -114,7 +129,7 @@ export default function HomePage() {
           </div>
         )}
         <AuthFlow
-          address={address}
+          fid={context.user.fid}
           onComplete={async () => {
             await checkUserAuth();
           }}
@@ -123,6 +138,7 @@ export default function HomePage() {
     );
   }
 
+  // User is authenticated - show dashboard
   return (
     <Dashboard
       user={user}

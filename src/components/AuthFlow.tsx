@@ -5,13 +5,13 @@ import { AlertCircle, Clock } from 'lucide-react';
 import { APP_NAME } from '~/lib/constants';
 
 interface AuthFlowProps {
-  address: string;
+  fid: number;
   onComplete: () => Promise<void> | void;
 }
 
 type AuthStep = 'init' | 'approve' | 'polling';
 
-export default function AuthFlow({ address, onComplete }: AuthFlowProps) {
+export default function AuthFlow({ fid, onComplete }: AuthFlowProps) {
   const [step, setStep] = useState<AuthStep>('init');
   const [signerUrl, setSignerUrl] = useState<string>('');
   const [signerUuid, setSignerUuid] = useState<string>('');
@@ -39,24 +39,10 @@ export default function AuthFlow({ address, onComplete }: AuthFlowProps) {
       setSignerUrl('');
       setSignerUuid('');
 
-      const fidRes = await fetch('/api/auth/get-fid', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address }),
-      });
-
-      if (!fidRes.ok) {
-        const data = await fidRes.json().catch(() => ({}));
-        setError(data.error ?? 'Failed to find Farcaster account for address.');
-        return;
-      }
-
-      const fidData = await fidRes.json();
-
       const signerRes = await fetch('/api/auth/create-signer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(fidData),
+        body: JSON.stringify({ fid }),
       });
 
       if (!signerRes.ok) {
@@ -76,7 +62,7 @@ export default function AuthFlow({ address, onComplete }: AuthFlowProps) {
       console.error('Auth start error:', err);
       setError('Failed to start authentication. Please try again.');
     }
-  }, [address]);
+  }, [fid]);
 
   const checkStatus = useCallback(async () => {
     if (!signerUuid) {
