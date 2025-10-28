@@ -1,7 +1,9 @@
 # Data Model
 
 Database: **PostgreSQL** (via Supabase)
-Schema: [db/schema.sql](../db/schema.sql)
+Schemas:
+- Simple schema: [db/schema.sql](../db/schema.sql)
+- Full Supabase dump: [supabase/schema.sql](../supabase/schema.sql)
 
 ## Tables
 

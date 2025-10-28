@@ -354,21 +354,208 @@ Authorization: Bearer <CRON_SECRET>
 
 ---
 
+## Auth Helper Routes
+
+### `GET /api/auth/nonce`
+
+Fetches a nonce from Neynar for authentication.
+
+**Response (200):**
+```json
+{
+  "nonce": "random-nonce-string"
+}
+```
+
+**Errors:**
+- `500`: Failed to fetch nonce
+
+**Implementation**: [src/app/api/auth/nonce/route.ts](../src/app/api/auth/nonce/route.ts)
+
+---
+
+### `POST /api/auth/validate`
+
+Validates a QuickAuth JWT token.
+
+**Request:**
+```json
+{
+  "token": "jwt-token-string"
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "user": {
+    "fid": 12345
+  }
+}
+```
+
+**Errors:**
+- `400`: Token required
+- `401`: Invalid token
+- `500`: Internal server error
+
+**Implementation**: [src/app/api/auth/validate/route.ts](../src/app/api/auth/validate/route.ts)
+
+---
+
+### `POST /api/auth/get-fid`
+
+Looks up FID by Ethereum address.
+
+**Request:**
+```json
+{
+  "address": "0x..."
+}
+```
+
+**Response (200):**
+```json
+{
+  "fid": 12345,
+  "username": "alice",
+  "display_name": "Alice",
+  "pfp_url": "https://...",
+  "custody_address": "0x...",
+  "verified_addresses": {}
+}
+```
+
+**Errors:**
+- `400`: Address required
+- `404`: No Farcaster account found
+- `500`: Failed to get FID
+
+**Implementation**: [src/app/api/auth/get-fid/route.ts](../src/app/api/auth/get-fid/route.ts)
+
+---
+
+### `POST /api/auth/signer` & `GET /api/auth/signer?signerUuid=...`
+
+Create or lookup a Neynar signer.
+
+**POST Response:**
+```json
+{
+  "signer_uuid": "abc-123",
+  "signer_approval_url": "https://...",
+  "public_key": "0x..."
+}
+```
+
+**GET Response:**
+```json
+{
+  "status": "approved",
+  "fid": 12345
+}
+```
+
+**Implementation**: [src/app/api/auth/signer/route.ts](../src/app/api/auth/signer/route.ts)
+
+---
+
+### `GET /api/auth/signers?message=...&signature=...`
+
+Fetches signers associated with a message/signature pair.
+
+**Query Params:**
+- `message` (required)
+- `signature` (required)
+
+**Response (200):**
+```json
+{
+  "signers": [...]
+}
+```
+
+**Implementation**: [src/app/api/auth/signers/route.ts](../src/app/api/auth/signers/route.ts)
+
+---
+
+### `GET /api/auth/session-signers?message=...&signature=...`
+
+Fetches signers and associated user data.
+
+**Response (200):**
+```json
+{
+  "signers": [...],
+  "user": {
+    "fid": 12345,
+    "username": "alice"
+  }
+}
+```
+
+**Implementation**: [src/app/api/auth/session-signers/route.ts](../src/app/api/auth/session-signers/route.ts)
+
+---
+
+### `POST /api/auth/signer/signed_key`
+
+Registers a signed key for sponsored signers.
+
+**Request:**
+```json
+{
+  "signerUuid": "abc-123",
+  "publicKey": "0x...",
+  "redirectUrl": "https://..."
+}
+```
+
+**Response (200):**
+```json
+{
+  "signer_uuid": "abc-123",
+  "signer_approval_url": "https://...",
+  "public_key": "0x..."
+}
+```
+
+**Environment Requirements:**
+- `SEED_PHRASE`: App's mnemonic
+- `SPONSOR_SIGNER`: Set to 'true' to enable sponsorship
+- `FARCASTER_DEVELOPER_FID`: App's FID
+
+**Implementation**: [src/app/api/auth/signer/signed_key/route.ts](../src/app/api/auth/signer/signed_key/route.ts)
+
+---
+
 ## Other Routes
 
 ### `GET /api/best-friends?fid=12345`
 
 Fetches user's best friends from Neynar.
 
-**Response:**
+**Query Params:**
+- `fid` (required): Farcaster ID
+
+**Response (200):**
 ```json
 {
   "bestFriends": [
-    { "fid": 456, "username": "bob" },
-    { "fid": 789, "username": "carol" }
+    {
+      "user": {
+        "fid": 456,
+        "username": "bob"
+      }
+    }
   ]
 }
 ```
+
+**Errors:**
+- `400`: FID parameter required
+- `500`: Neynar API error
 
 **Implementation**: [src/app/api/best-friends/route.ts](../src/app/api/best-friends/route.ts)
 
@@ -377,6 +564,8 @@ Fetches user's best friends from Neynar.
 ### `POST /api/webhook`
 
 Receives Farcaster mini-app events from Neynar.
+
+**Note**: Only processes webhooks when Neynar is NOT enabled (falls back to local webhook handler).
 
 **Events:**
 - `miniapp_added` - User added app
@@ -387,7 +576,30 @@ Receives Farcaster mini-app events from Neynar.
 **Body (example):**
 ```json
 {
-  "event": "notifications_enabled",
+  "fid": 12345,
+  "event": {
+    "event": "notifications_enabled",
+    "notificationDetails": {
+      "url": "https://...",
+      "token": "..."
+    }
+  }
+}
+```
+
+**Side effects**: Stores notification details in KV storage, sends welcome notification.
+
+**Implementation**: [src/app/api/webhook/route.ts](../src/app/api/webhook/route.ts)
+
+---
+
+### `POST /api/send-notification`
+
+Test endpoint to send a mini-app notification.
+
+**Request:**
+```json
+{
   "fid": 12345,
   "notificationDetails": {
     "url": "https://...",
@@ -396,9 +608,19 @@ Receives Farcaster mini-app events from Neynar.
 }
 ```
 
-**Side effects**: Stores notification details in KV storage.
+**Response (200):**
+```json
+{
+  "success": true
+}
+```
 
-**Implementation**: [src/app/api/webhook/route.ts](../src/app/api/webhook/route.ts)
+**Errors:**
+- `400`: Invalid request body
+- `429`: Rate limited
+- `500`: Notification send failed
+
+**Implementation**: [src/app/api/send-notification/route.ts](../src/app/api/send-notification/route.ts)
 
 ---
 
