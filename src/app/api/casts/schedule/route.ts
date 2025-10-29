@@ -1,17 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '~/lib/supabase';
+import { getSession } from '~/auth';
 
 interface ScheduleCastBody {
-  fid?: number;
   content?: string;
   scheduled_time?: string;
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { fid, content, scheduled_time }: ScheduleCastBody = await req.json();
+    // Authentication check - verify user session
+    const session = await getSession();
+    if (!session || !session.user?.fid) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please sign in' },
+        { status: 401 },
+      );
+    }
 
-    if (!fid || !content || !scheduled_time) {
+    // Use authenticated FID from session (not from request body)
+    const fid = session.user.fid;
+
+    const { content, scheduled_time }: ScheduleCastBody = await req.json();
+
+    if (!content || !scheduled_time) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 },

@@ -1,20 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '~/lib/supabase';
+import { getSession } from '~/auth';
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const fidParam = searchParams.get('fid');
-
-  if (!fidParam) {
-    return NextResponse.json({ error: 'Missing fid' }, { status: 400 });
-  }
-
-  const fid = Number.parseInt(fidParam, 10);
-  if (Number.isNaN(fid)) {
-    return NextResponse.json({ error: 'Invalid fid' }, { status: 400 });
-  }
-
+export async function GET(_req: NextRequest) {
   try {
+    // Authentication check - verify user session
+    const session = await getSession();
+    if (!session || !session.user?.fid) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please sign in' },
+        { status: 401 },
+      );
+    }
+
+    // Use authenticated FID from session (ignore any fid query parameter)
+    const fid = session.user.fid;
+
     const { data: casts, error } = await supabase
       .from('scheduled_casts')
       .select('*')

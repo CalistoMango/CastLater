@@ -1,18 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '~/lib/supabase';
+import { getSession } from '~/auth';
 
 interface CancelCastBody {
   cast_id?: string;
-  fid?: number;
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { cast_id, fid }: CancelCastBody = await req.json();
-
-    if (!cast_id || !fid) {
+    // Authentication check - verify user session
+    const session = await getSession();
+    if (!session || !session.user?.fid) {
       return NextResponse.json(
-        { error: 'Missing cast_id or fid' },
+        { error: 'Unauthorized - Please sign in' },
+        { status: 401 },
+      );
+    }
+
+    // Use authenticated FID from session (not from request body)
+    const fid = session.user.fid;
+
+    const { cast_id }: CancelCastBody = await req.json();
+
+    if (!cast_id) {
+      return NextResponse.json(
+        { error: 'Missing cast_id' },
         { status: 400 },
       );
     }

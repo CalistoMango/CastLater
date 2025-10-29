@@ -5,7 +5,6 @@ import { useAccount, useConnect } from 'wagmi';
 import { useMiniApp } from '@neynar/react';
 import AuthFlow from '~/components/AuthFlow';
 import Dashboard, { type UserRecord } from '~/components/Dashboard';
-import ConnectButton from '~/components/ConnectButton';
 import { APP_NAME } from '~/lib/constants';
 
 export default function HomePage() {
@@ -17,6 +16,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fid, setFid] = useState<number | null>(null);
+  const [signerApproved, setSignerApproved] = useState<boolean | null>(null);
 
   // Check if we're running in Farcaster client
   const isInFarcasterClient = typeof window !== 'undefined' &&
@@ -41,10 +41,19 @@ export default function HomePage() {
   const fetchUserByFid = useCallback(
     async (targetFid: number) => {
       const res = await fetch(`/api/users/${targetFid}`);
+
+      // 401 means not authenticated - need to show AuthFlow
+      if (res.status === 401) {
+        setUser(null);
+        return null;
+      }
+
+      // 404 means user doesn't exist yet - need to show AuthFlow to create
       if (res.status === 404) {
         setUser(null);
         return null;
       }
+
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error ?? 'Failed to load user');
@@ -62,6 +71,7 @@ export default function HomePage() {
     if (!contextFid) {
       setUser(null);
       setFid(null);
+      setSignerApproved(null);
       setLoading(false);
       return;
     }
@@ -71,7 +81,25 @@ export default function HomePage() {
 
     try {
       setFid(contextFid);
-      await fetchUserByFid(contextFid);
+      const fetchedUser = await fetchUserByFid(contextFid);
+
+      // Check signer approval status if user has a signer
+      if (fetchedUser?.signer_uuid) {
+        try {
+          const statusRes = await fetch(`/api/auth/signer-status?signer_uuid=${fetchedUser.signer_uuid}`);
+          if (statusRes.ok) {
+            const { status } = await statusRes.json();
+            setSignerApproved(status === 'approved');
+          } else {
+            setSignerApproved(false);
+          }
+        } catch (signerErr) {
+          console.error('Signer status check error:', signerErr);
+          setSignerApproved(false);
+        }
+      } else {
+        setSignerApproved(false);
+      }
     } catch (err) {
       console.error('Auth check error:', err);
       setError('Failed to load user data. Please try again.');
@@ -119,7 +147,7 @@ export default function HomePage() {
     );
   }
 
-  // Have FID but no user record or signer - show auth flow
+  // Have FID but no user record - show auth flow
   if (!user || !fid) {
     return (
       <div className="relative">
@@ -138,7 +166,26 @@ export default function HomePage() {
     );
   }
 
-  // User is authenticated - show dashboard
+  // User exists but signer not approved - show auth flow
+  if (user.signer_uuid && signerApproved === false) {
+    return (
+      <div className="relative">
+        {error && (
+          <div className="absolute inset-x-0 top-4 z-10 mx-auto w-full max-w-md rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow">
+            {error}
+          </div>
+        )}
+        <AuthFlow
+          fid={context.user.fid}
+          onComplete={async () => {
+            await checkUserAuth();
+          }}
+        />
+      </div>
+    );
+  }
+
+  // User is authenticated with approved signer - show dashboard
   return (
     <Dashboard
       user={user}

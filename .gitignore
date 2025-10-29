@@ -2,6 +2,7 @@
 
 # Exclude LLM prompt files
 /docs/Prompts
+/docs/Tests/*
 /docs/LLM.md
 
 # dependencies

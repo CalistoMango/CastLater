@@ -92,7 +92,8 @@ export default function Dashboard({
     setCastsLoading(true);
     setCastsError(null);
     try {
-      const res = await fetch(`/api/casts/list?fid=${user.fid}`);
+      // FID is now derived from authenticated session on server-side
+      const res = await fetch('/api/casts/list');
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error ?? 'Failed to load casts');
@@ -106,7 +107,8 @@ export default function Dashboard({
     } finally {
       setCastsLoading(false);
     }
-  }, [user?.fid]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     fetchCasts();
@@ -152,11 +154,11 @@ export default function Dashboard({
     setIsScheduling(true);
 
     try {
+      // FID is now derived from authenticated session on server-side
       const res = await fetch('/api/casts/schedule', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fid: user.fid,
           content: castContent.trim(),
           scheduled_time: scheduledAt.toISOString(),
         }),
@@ -193,16 +195,16 @@ export default function Dashboard({
     fetchCasts,
     isScheduling,
     onRefreshUser,
-    user.fid,
   ]);
 
   const cancelCast = useCallback(
     async (castId: string) => {
       try {
+        // FID is now derived from authenticated session on server-side
         const res = await fetch('/api/casts/cancel', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cast_id: castId, fid: user.fid }),
+          body: JSON.stringify({ cast_id: castId }),
         });
 
         const data = await res.json();
@@ -218,7 +220,7 @@ export default function Dashboard({
         );
       }
     },
-    [fetchCasts, user.fid],
+    [fetchCasts],
   );
 
   const recordPayment = useCallback(
