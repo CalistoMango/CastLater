@@ -2,9 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertCircle, Clock } from 'lucide-react';
-import { useMiniApp } from '@neynar/react';
-import sdk from '@farcaster/miniapp-sdk';
-import { APP_NAME } from '~/lib/constants';
+import { APP_NAME, APP_URL } from '~/lib/constants';
 
 interface AuthFlowProps {
   fid: number;
@@ -14,9 +12,6 @@ interface AuthFlowProps {
 type AuthStep = 'init' | 'approve' | 'polling';
 
 export default function AuthFlow({ fid, onComplete }: AuthFlowProps) {
-  const { context } = useMiniApp();
-  const isInMiniapp = context !== undefined;
-
   const [step, setStep] = useState<AuthStep>('init');
   const [signerUrl, setSignerUrl] = useState<string>('');
   const [signerUuid, setSignerUuid] = useState<string>('');
@@ -37,19 +32,6 @@ export default function AuthFlow({ fid, onComplete }: AuthFlowProps) {
 
   useEffect(() => clearPolling, [clearPolling]);
 
-  const openSignerUrl = useCallback(
-    async (url: string) => {
-      if (isInMiniapp) {
-        // In Warpcast miniapp, use SDK to open URL
-        await sdk.actions.openUrl(url);
-      } else {
-        // In regular browser, use window.open
-        window.open(url, '_blank', 'noopener,noreferrer');
-      }
-    },
-    [isInMiniapp],
-  );
-
   const startAuth = useCallback(async () => {
     try {
       setError(null);
@@ -57,7 +39,7 @@ export default function AuthFlow({ fid, onComplete }: AuthFlowProps) {
       setSignerUrl('');
       setSignerUuid('');
 
-      const signerRes = await fetch('/api/auth/create-signer', {
+      const signerRes = await fetch(`${APP_URL}/api/auth/create-signer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fid }),
@@ -75,12 +57,12 @@ export default function AuthFlow({ fid, onComplete }: AuthFlowProps) {
       setSignerUuid(signer_uuid);
       setStep('approve');
 
-      await openSignerUrl(signer_approval_url);
+      window.open(signer_approval_url, '_blank', 'noopener,noreferrer');
     } catch (err) {
       console.error('Auth start error:', err);
       setError('Failed to start authentication. Please try again.');
     }
-  }, [fid, openSignerUrl]);
+  }, [fid]);
 
   const checkStatus = useCallback(async () => {
     if (!signerUuid) {
@@ -94,7 +76,7 @@ export default function AuthFlow({ fid, onComplete }: AuthFlowProps) {
     const poll = async () => {
       try {
         const res = await fetch(
-          `/api/auth/signer-status?signer_uuid=${signerUuid}`,
+          `${APP_URL}/api/auth/signer-status?signer_uuid=${encodeURIComponent(signerUuid)}`,
         );
         if (!res.ok) {
           throw new Error('Failed to check signer status');
@@ -154,12 +136,14 @@ export default function AuthFlow({ fid, onComplete }: AuthFlowProps) {
               <p className="text-gray-600">
                 Approve the signer in Warpcast to finish connecting your account.
               </p>
-              <button
-                onClick={() => openSignerUrl(signerUrl)}
-                className="mt-4 inline-block text-sm font-medium text-indigo-600 underline hover:text-indigo-800 focus:outline-none"
+              <a
+                href={signerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-block text-sm font-medium text-indigo-600 underline"
               >
                 Open approval link again
-              </button>
+              </a>
             </div>
             <button
               onClick={checkStatus}

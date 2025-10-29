@@ -34,7 +34,7 @@ export function ShareButton({ buttonText, cast, className = '', isLoading = fals
   useEffect(() => {
     if (cast.bestFriends && context?.user?.fid) {
       setIsLoadingBestFriends(true);
-      fetch(`/api/best-friends?fid=${context.user.fid}`)
+      fetch(`${APP_URL}/api/best-friends?fid=${context.user.fid}`)
         .then(res => res.json())
         .then(data => setBestFriends(data.bestFriends))
         .catch(err => console.error('Failed to fetch best friends:', err))

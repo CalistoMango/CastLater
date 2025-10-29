@@ -11,6 +11,7 @@ import '@farcaster/auth-kit/styles.css';
 import { useSignIn, UseSignInData } from '@farcaster/auth-kit';
 import { useCallback, useEffect, useState, useRef } from 'react';
 import { cn } from '~/lib/utils';
+import { APP_URL } from '~/lib/constants';
 import { Button } from '~/components/ui/Button';
 import { ProfileButton } from '~/components/ui/NeynarAuthButton/ProfileButton';
 import { AuthDialog } from '~/components/ui/NeynarAuthButton/AuthDialog';
@@ -128,7 +129,7 @@ export function NeynarAuthButton() {
   // Helper function to create a signer
   const createSigner = useCallback(async () => {
     try {
-      const response = await fetch('/api/auth/signer', {
+      const response = await fetch(`${APP_URL}/api/auth/signer`, {
         method: 'POST',
       });
 
@@ -178,7 +179,7 @@ export function NeynarAuthButton() {
   const fetchUserData = useCallback(
     async (fid: number): Promise<User | null> => {
       try {
-        const response = await fetch(`/api/users?fids=${fid}`);
+        const response = await fetch(`${APP_URL}/api/users?fids=${fid}`);
         if (response.ok) {
           const data = await response.json();
           return data.users?.[0] || null;
@@ -206,7 +207,7 @@ export function NeynarAuthButton() {
           publicKey,
         };
 
-        const response = await fetch('/api/auth/signer/signed_key', {
+        const response = await fetch(`${APP_URL}/api/auth/signer/signed_key`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -239,10 +240,10 @@ export function NeynarAuthButton() {
         setSignersLoading(true);
 
         const endpoint = useMiniappFlow
-          ? `/api/auth/session-signers?message=${encodeURIComponent(
+          ? `${APP_URL}/api/auth/session-signers?message=${encodeURIComponent(
               message
             )}&signature=${signature}`
-          : `/api/auth/signers?message=${encodeURIComponent(
+          : `${APP_URL}/api/auth/signers?message=${encodeURIComponent(
               message
             )}&signature=${signature}`;
 
@@ -318,7 +319,7 @@ export function NeynarAuthButton() {
 
         try {
           const response = await fetch(
-            `/api/auth/signer?signerUuid=${signerUuid}`
+            `${APP_URL}/api/auth/signer?signerUuid=${encodeURIComponent(signerUuid)}`
           );
 
           if (!response.ok) {
@@ -376,7 +377,7 @@ export function NeynarAuthButton() {
   useEffect(() => {
     const generateNonce = async () => {
       try {
-        const response = await fetch('/api/auth/nonce');
+        const response = await fetch(`${APP_URL}/api/auth/nonce`);
         if (response.ok) {
           const data = await response.json();
           setNonce(data.nonce);

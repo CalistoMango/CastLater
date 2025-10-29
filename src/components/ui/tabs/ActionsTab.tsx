@@ -57,7 +57,7 @@ export function ActionsTab() {
       return;
     }
     try {
-      const response = await fetch('/api/send-notification', {
+      const response = await fetch(`${APP_URL}/api/send-notification`, {
         method: 'POST',
         mode: 'same-origin',
         headers: { 'Content-Type': 'application/json' },

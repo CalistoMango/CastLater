@@ -19,7 +19,7 @@ import {
   useWaitForTransactionReceipt,
   useWriteContract,
 } from 'wagmi';
-import { APP_NAME, ERC20_ABI, PAYMENT_CONFIG } from '~/lib/constants';
+import { APP_NAME, APP_URL, ERC20_ABI, PAYMENT_CONFIG } from '~/lib/constants';
 
 type PlanType = 'free' | 'unlimited' | string | null;
 
@@ -93,7 +93,7 @@ export default function Dashboard({
     setCastsError(null);
     try {
       // FID is now derived from authenticated session on server-side
-      const res = await fetch('/api/casts/list');
+      const res = await fetch(`${APP_URL}/api/casts/list`);
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error ?? 'Failed to load casts');
@@ -155,7 +155,7 @@ export default function Dashboard({
 
     try {
       // FID is now derived from authenticated session on server-side
-      const res = await fetch('/api/casts/schedule', {
+      const res = await fetch(`${APP_URL}/api/casts/schedule`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -201,7 +201,7 @@ export default function Dashboard({
     async (castId: string) => {
       try {
         // FID is now derived from authenticated session on server-side
-        const res = await fetch('/api/casts/cancel', {
+        const res = await fetch(`${APP_URL}/api/casts/cancel`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ cast_id: castId }),
@@ -232,7 +232,7 @@ export default function Dashboard({
       setPaymentError(null);
 
       try {
-        const res = await fetch('/api/payments/record', {
+        const res = await fetch(`${APP_URL}/api/payments/record`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

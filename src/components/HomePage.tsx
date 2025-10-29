@@ -5,7 +5,7 @@ import { useAccount, useConnect } from 'wagmi';
 import { useMiniApp } from '@neynar/react';
 import AuthFlow from '~/components/AuthFlow';
 import Dashboard, { type UserRecord } from '~/components/Dashboard';
-import { APP_NAME } from '~/lib/constants';
+import { APP_NAME, APP_URL } from '~/lib/constants';
 
 export default function HomePage() {
   const { isConnected } = useAccount();
@@ -40,7 +40,7 @@ export default function HomePage() {
 
   const fetchUserByFid = useCallback(
     async (targetFid: number) => {
-      const res = await fetch(`/api/users/${targetFid}`);
+      const res = await fetch(`${APP_URL}/api/users/${targetFid}`);
 
       // 401 means not authenticated - need to show AuthFlow
       if (res.status === 401) {
@@ -86,7 +86,7 @@ export default function HomePage() {
       // Check signer approval status if user has a signer
       if (fetchedUser?.signer_uuid) {
         try {
-          const statusRes = await fetch(`/api/auth/signer-status?signer_uuid=${fetchedUser.signer_uuid}`);
+          const statusRes = await fetch(`${APP_URL}/api/auth/signer-status?signer_uuid=${encodeURIComponent(fetchedUser.signer_uuid)}`);
           if (statusRes.ok) {
             const { status } = await statusRes.json();
             setSignerApproved(status === 'approved');
