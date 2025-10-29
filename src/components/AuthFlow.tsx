@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertCircle, Clock } from 'lucide-react';
+import { useMiniApp } from '@neynar/react';
+import sdk from '@farcaster/miniapp-sdk';
 import { APP_NAME } from '~/lib/constants';
 
 interface AuthFlowProps {
@@ -12,6 +14,9 @@ interface AuthFlowProps {
 type AuthStep = 'init' | 'approve' | 'polling';
 
 export default function AuthFlow({ fid, onComplete }: AuthFlowProps) {
+  const { context } = useMiniApp();
+  const isInMiniapp = context !== undefined;
+
   const [step, setStep] = useState<AuthStep>('init');
   const [signerUrl, setSignerUrl] = useState<string>('');
   const [signerUuid, setSignerUuid] = useState<string>('');
@@ -31,6 +36,19 @@ export default function AuthFlow({ fid, onComplete }: AuthFlowProps) {
   }, []);
 
   useEffect(() => clearPolling, [clearPolling]);
+
+  const openSignerUrl = useCallback(
+    async (url: string) => {
+      if (isInMiniapp) {
+        // In Warpcast miniapp, use SDK to open URL
+        await sdk.actions.openUrl(url);
+      } else {
+        // In regular browser, use window.open
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+    },
+    [isInMiniapp],
+  );
 
   const startAuth = useCallback(async () => {
     try {
@@ -57,12 +75,12 @@ export default function AuthFlow({ fid, onComplete }: AuthFlowProps) {
       setSignerUuid(signer_uuid);
       setStep('approve');
 
-      window.open(signer_approval_url, '_blank', 'noopener,noreferrer');
+      await openSignerUrl(signer_approval_url);
     } catch (err) {
       console.error('Auth start error:', err);
       setError('Failed to start authentication. Please try again.');
     }
-  }, [fid]);
+  }, [fid, openSignerUrl]);
 
   const checkStatus = useCallback(async () => {
     if (!signerUuid) {
@@ -136,14 +154,12 @@ export default function AuthFlow({ fid, onComplete }: AuthFlowProps) {
               <p className="text-gray-600">
                 Approve the signer in Warpcast to finish connecting your account.
               </p>
-              <a
-                href={signerUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 inline-block text-sm font-medium text-indigo-600 underline"
+              <button
+                onClick={() => openSignerUrl(signerUrl)}
+                className="mt-4 inline-block text-sm font-medium text-indigo-600 underline hover:text-indigo-800 focus:outline-none"
               >
                 Open approval link again
-              </a>
+              </button>
             </div>
             <button
               onClick={checkStatus}
