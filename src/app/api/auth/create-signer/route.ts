@@ -44,11 +44,27 @@ export async function POST(req: NextRequest) {
 
       const shouldSponsor = env.SPONSOR_SIGNER === 'true';
 
-      const {
-        user: { fid: appFid },
-      } = await neynarClient.lookupUserByCustodyAddress({
-        custodyAddress: account.address,
-      });
+      let appFid = env.FARCASTER_DEVELOPER_FID;
+
+      if (appFid === undefined) {
+        try {
+          const {
+            user: { fid },
+          } = await neynarClient.lookupUserByCustodyAddress({
+            custodyAddress: account.address,
+          });
+          appFid = fid;
+        } catch (lookupError) {
+          console.error('Failed to resolve app FID from custody address:', lookupError);
+          return NextResponse.json(
+            {
+              error:
+                'Failed to resolve app FID. Set FARCASTER_DEVELOPER_FID or ensure SEED_PHRASE corresponds to a registered Farcaster account.',
+            },
+            { status: 500 },
+          );
+        }
+      }
 
       const deadline = Math.floor(Date.now() / 1000) + 86_400; // 24 hours
 
