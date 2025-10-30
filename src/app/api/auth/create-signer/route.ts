@@ -7,6 +7,7 @@ import {
   SIGNED_KEY_REQUEST_VALIDATOR_EIP_712_DOMAIN,
 } from '~/lib/constants';
 import { env } from '~/lib/env.server';
+import { AxiosError } from 'axios';
 
 interface CreateSignerBody {
   fid?: number;
