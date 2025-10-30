@@ -27,9 +27,19 @@ export async function POST(req: NextRequest) {
 
     const signer = await neynarClient.createSigner();
 
+    console.log('=== DIAGNOSTIC 1: createSigner() response ===', {
+      hasSignerApprovalUrl: !!signer.signer_approval_url,
+      signerApprovalUrlValue: signer.signer_approval_url,
+      signerUuid: signer.signer_uuid,
+      publicKeyPrefix: signer.public_key?.substring(0, 20) + '...',
+      allResponseKeys: Object.keys(signer),
+      signerStatus: (signer as any).status,
+    });
+
     let signerApprovalUrl = signer.signer_approval_url;
 
     if (!signerApprovalUrl) {
+      console.log('=== DIAGNOSTIC 2: signer_approval_url is missing, entering fallback path ===');
       const seedPhrase = env.SEED_PHRASE;
 
       if (!seedPhrase) {
@@ -42,20 +52,37 @@ export async function POST(req: NextRequest) {
 
       const account = mnemonicToAccount(seedPhrase);
 
+      console.log('=== DIAGNOSTIC 3: Derived account from SEED_PHRASE ===', {
+        custodyAddress: account.address,
+      });
+
       const shouldSponsor = env.SPONSOR_SIGNER === 'true';
 
       let appFid = env.FARCASTER_DEVELOPER_FID;
 
+      console.log('=== DIAGNOSTIC 4: App FID configuration ===', {
+        FARCASTER_DEVELOPER_FID: appFid,
+        willLookupFromCustody: appFid === undefined,
+      });
+
       if (appFid === undefined) {
         try {
+          console.log('=== DIAGNOSTIC 5: Looking up FID from custody address ===', {
+            custodyAddress: account.address,
+          });
+
           const {
             user: { fid },
           } = await neynarClient.lookupUserByCustodyAddress({
             custodyAddress: account.address,
           });
           appFid = fid;
+
+          console.log('=== DIAGNOSTIC 6: Custody lookup succeeded ===', {
+            resolvedFid: appFid,
+          });
         } catch (lookupError) {
-          console.error('Failed to resolve app FID from custody address:', lookupError);
+          console.error('=== DIAGNOSTIC 7: Custody lookup FAILED ===', lookupError);
           return NextResponse.json(
             {
               error:
@@ -67,6 +94,13 @@ export async function POST(req: NextRequest) {
       }
 
       const deadline = Math.floor(Date.now() / 1000) + 86_400; // 24 hours
+
+      console.log('=== DIAGNOSTIC 8: Signing EIP-712 message ===', {
+        appFid,
+        signerPublicKey: signer.public_key,
+        deadline,
+        deadlineDate: new Date(deadline * 1000).toISOString(),
+      });
 
       const signature = await account.signTypedData({
         domain: SIGNED_KEY_REQUEST_VALIDATOR_EIP_712_DOMAIN,
@@ -81,18 +115,47 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      const registeredSigner = await neynarClient.registerSignedKey({
+      console.log('=== DIAGNOSTIC 9: Signature created, calling registerSignedKey ===', {
         signerUuid: signer.signer_uuid,
         appFid,
         deadline,
-        signature,
-        ...(shouldSponsor && { sponsor: { sponsored_by_neynar: true } }),
+        signatureLength: signature.length,
+        shouldSponsor,
       });
 
-      signerApprovalUrl = registeredSigner.signer_approval_url;
+      try {
+        const registeredSigner = await neynarClient.registerSignedKey({
+          signerUuid: signer.signer_uuid,
+          appFid,
+          deadline,
+          signature,
+          ...(shouldSponsor && { sponsor: { sponsored_by_neynar: true } }),
+        });
 
-      if (!signerApprovalUrl) {
-        throw new Error('Signer approval URL missing after registration');
+        console.log('=== DIAGNOSTIC 10: registerSignedKey SUCCESS ===', {
+          hasApprovalUrl: !!registeredSigner.signer_approval_url,
+          approvalUrlValue: registeredSigner.signer_approval_url,
+          allResponseKeys: Object.keys(registeredSigner),
+        });
+
+        signerApprovalUrl = registeredSigner.signer_approval_url;
+
+        if (!signerApprovalUrl) {
+          throw new Error('Signer approval URL missing after registration');
+        }
+      } catch (registerError) {
+        console.error('=== DIAGNOSTIC 11: registerSignedKey FAILED ===');
+        if (registerError instanceof AxiosError) {
+          console.error('Axios error details:', {
+            status: registerError.response?.status,
+            statusText: registerError.response?.statusText,
+            data: registerError.response?.data,
+            headers: registerError.response?.headers,
+          });
+        } else {
+          console.error('Non-Axios error:', registerError);
+        }
+        throw registerError;
       }
     }
 
@@ -119,6 +182,11 @@ export async function POST(req: NextRequest) {
       throw error;
     }
 
+    console.log('=== DIAGNOSTIC 12: SUCCESS - Returning response ===', {
+      hasSignerApprovalUrl: !!signerApprovalUrl,
+      signerApprovalUrl,
+    });
+
     return NextResponse.json({
       signer_uuid: signer.signer_uuid,
       signer_approval_url: signerApprovalUrl,
@@ -126,7 +194,8 @@ export async function POST(req: NextRequest) {
       user,
     });
   } catch (error) {
-    console.error('Create signer error:', error);
+    console.error('=== DIAGNOSTIC 13: FATAL ERROR in main try block ===');
+    console.error('Error details:', error);
     return NextResponse.json(
       { error: 'Failed to create signer' },
       { status: 500 },
