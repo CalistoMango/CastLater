@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertCircle, Clock } from 'lucide-react';
-import { APP_NAME, APP_URL } from '~/lib/constants';
+import { APP_NAME } from '~/lib/constants';
+import { apiFetch } from '~/lib/api';
 
 interface AuthFlowProps {
   fid: number;
@@ -39,7 +40,7 @@ export default function AuthFlow({ fid, onComplete }: AuthFlowProps) {
       setSignerUrl('');
       setSignerUuid('');
 
-      const signerRes = await fetch(`${APP_URL}/api/auth/create-signer`, {
+      const signerRes = await apiFetch('/api/auth/create-signer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fid }),
@@ -75,8 +76,8 @@ export default function AuthFlow({ fid, onComplete }: AuthFlowProps) {
 
     const poll = async () => {
       try {
-        const res = await fetch(
-          `${APP_URL}/api/auth/signer-status?signer_uuid=${encodeURIComponent(signerUuid)}`,
+        const res = await apiFetch(
+          `/api/auth/signer-status?signer_uuid=${encodeURIComponent(signerUuid)}`,
         );
         if (!res.ok) {
           throw new Error('Failed to check signer status');

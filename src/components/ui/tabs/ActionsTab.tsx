@@ -7,6 +7,7 @@ import { Button } from '../Button';
 import { SignIn } from '../wallet/SignIn';
 import { type Haptics } from '@farcaster/miniapp-sdk';
 import { APP_URL } from '~/lib/constants';
+import { apiFetch } from '~/lib/api';
 import { NeynarAuthButton } from '../NeynarAuthButton';
 
 /**
@@ -57,7 +58,7 @@ export function ActionsTab() {
       return;
     }
     try {
-      const response = await fetch(`${APP_URL}/api/send-notification`, {
+      const response = await apiFetch('/api/send-notification', {
         method: 'POST',
         mode: 'same-origin',
         headers: { 'Content-Type': 'application/json' },

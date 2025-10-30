@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { sdk } from '@farcaster/miniapp-sdk';
-import { APP_URL } from '~/lib/constants';
+import { apiFetch } from '~/lib/api';
 
 /**
  * Represents the current authenticated user state
@@ -79,7 +79,7 @@ export function useQuickAuth(): UseQuickAuthReturn {
     authToken: string,
   ): Promise<AuthenticatedUser | null> => {
     try {
-      const validationResponse = await fetch(`${APP_URL}/api/auth/validate`, {
+      const validationResponse = await apiFetch('/api/auth/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: authToken }),
