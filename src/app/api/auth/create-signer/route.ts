@@ -144,18 +144,19 @@ export async function POST(req: NextRequest) {
         if (!signerApprovalUrl) {
           throw new Error('Signer approval URL missing after registration');
         }
-      } catch (registerError) {
+      } catch (registerError: any) {
         console.error('=== DIAGNOSTIC 11: registerSignedKey FAILED ===');
-        if (registerError instanceof AxiosError) {
-          console.error('Axios error details:', {
-            status: registerError.response?.status,
-            statusText: registerError.response?.statusText,
-            data: registerError.response?.data,
-            headers: registerError.response?.headers,
-          });
-          console.error('Full response data:', JSON.stringify(registerError.response?.data, null, 2));
+        console.error('Error type:', registerError?.constructor?.name);
+        console.error('Has response?', !!registerError?.response);
+
+        if (registerError?.response) {
+          console.error('Response status:', registerError.response.status);
+          console.error('Response statusText:', registerError.response.statusText);
+          console.error('Response data:', registerError.response.data);
+          console.error('Response data JSON:', JSON.stringify(registerError.response.data, null, 2));
         } else {
-          console.error('Non-Axios error:', registerError);
+          console.error('No response object in error');
+          console.error('Full error:', registerError);
         }
         throw registerError;
       }
