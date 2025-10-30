@@ -153,6 +153,7 @@ export async function POST(req: NextRequest) {
             data: registerError.response?.data,
             headers: registerError.response?.headers,
           });
+          console.error('Full response data:', JSON.stringify(registerError.response?.data, null, 2));
         } else {
           console.error('Non-Axios error:', registerError);
         }
